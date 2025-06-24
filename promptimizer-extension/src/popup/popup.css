@@ -204,6 +204,12 @@ body {
   color: #7b1fa2;
 }
 
+.quality-expert {
+  background: #e8f5e8;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
 .optimized-prompt {
   background: #f8f9fa;
   border: 1px solid #e9ecef;

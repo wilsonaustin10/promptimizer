@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import './popup.css'
 
 type TargetModel = 'gpt-4o' | 'claude-3-sonnet' | 'gemini-1.5' | 'o3-mini'
-type QualityLevel = 'simple' | 'advanced'
+type QualityLevel = 'simple' | 'advanced' | 'expert'
 
 interface OptimizationResult {
   optimizedPrompt: string
@@ -18,7 +18,7 @@ interface OptimizationResult {
 const App: React.FC = () => {
   const [rawPrompt, setRawPrompt] = useState('')
   const [targetModel, setTargetModel] = useState<TargetModel>('o3-mini')
-  const [qualityLevel, setQualityLevel] = useState<QualityLevel>('advanced')
+  const [qualityLevel, setQualityLevel] = useState<QualityLevel>('expert')
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [result, setResult] = useState<OptimizationResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -136,6 +136,7 @@ const App: React.FC = () => {
             >
               <option value="simple">⚡ Simple (Fast)</option>
               <option value="advanced">🎯 Advanced (Detailed)</option>
+              <option value="expert">🚀 Expert (Production-Grade)</option>
             </select>
           </div>
         </div>

@@ -1,22 +1,22 @@
-const S={simple:{"gpt-4o":`You are an expert prompt engineer. Transform the user's prompt for GPT-4o:
+const N={simple:{"gpt-4o":`You are an expert prompt engineer. Transform the user's prompt for GPT-4o:
 - Add clear role definition
 - Break into numbered steps
 - Specify output format
 - Add "Think step-by-step" for reasoning
 
-Return ONLY the optimized prompt.`,"claude-3-sonnet":`You are an expert prompt engineer. Transform the user's prompt for Claude 3 Sonnet:
+Return ONLY the optimized prompt. Do NOT include any explanations, descriptions, or commentary about the prompt.`,"claude-3-sonnet":`You are an expert prompt engineer. Transform the user's prompt for Claude 3 Sonnet:
 - Use XML tags for structure (<task>, <context>)
 - Provide context upfront
 - Include specific formatting
 - Add ethical framing
 
-Return ONLY the optimized prompt.`,"gemini-1.5":`You are an expert prompt engineer. Transform the user's prompt for Gemini 1.5:
+Return ONLY the optimized prompt. Do NOT include any explanations, descriptions, or commentary about the prompt.`,"gemini-1.5":`You are an expert prompt engineer. Transform the user's prompt for Gemini 1.5:
 - Use structured sections
 - Include reasoning requests
 - Specify response length
 - Add evaluation criteria
 
-Return ONLY the optimized prompt.`,"o3-mini":`You are an expert prompt engineer. Transform the user's prompt for o3-mini:
+Return ONLY the optimized prompt. Do NOT include any explanations, descriptions, or commentary about the prompt.`,"o3-mini":`You are an expert prompt engineer. Transform the user's prompt for o3-mini:
 - Add clear role definition and constraints
 - Structure with numbered steps
 - Include specific success criteria
@@ -38,7 +38,7 @@ Transform the user's raw prompt into a production-ready, highly optimized versio
 7. **Error Handling**: Include instructions for edge cases and uncertainty
 
 # OUTPUT FORMAT
-Return ONLY the optimized prompt formatted with clear sections, using markdown headings where appropriate.
+Return ONLY the optimized prompt formatted with clear sections, using markdown headings where appropriate. Do NOT include any explanations or descriptions about what the prompt is designed to do. Do NOT add a title or heading like "# Optimized Prompt for GPT-4o" - start directly with the actual prompt content.
 
 # QUALITY STANDARDS
 The optimized prompt should be:
@@ -61,7 +61,7 @@ Transform the user's raw prompt into a comprehensive, well-structured prompt tha
 7. **Verification**: Add self-checking mechanisms
 
 # OUTPUT FORMAT
-Return ONLY the optimized prompt using proper XML structure and professional formatting.
+Return ONLY the optimized prompt using proper XML structure and professional formatting. Do NOT include any meta-commentary or descriptions about the prompt. Do NOT add a title or heading - start directly with the prompt content.
 
 # QUALITY STANDARDS
 - Comprehensive context and clear structure
@@ -83,7 +83,7 @@ Transform the user's raw prompt into a comprehensive, structured prompt that lev
 7. **Iterative Refinement**: Include self-improvement instructions
 
 # OUTPUT FORMAT
-Return ONLY the optimized prompt with professional structure and clear sections.
+Return ONLY the optimized prompt with professional structure and clear sections. Do NOT include any explanations about the prompt's purpose or design. Do NOT add a title heading - start directly with the prompt content.
 
 # QUALITY STANDARDS
 - Comprehensive and well-organized
@@ -105,11 +105,13 @@ Transform the user's raw prompt into a highly optimized, production-ready prompt
 7. **Quality Assurance**: Include verification and error-checking steps
 
 # OUTPUT FORMAT
-Return ONLY the optimized prompt using professional structure with clear sections and headings.
+Return ONLY the optimized prompt using professional structure with clear sections and headings. Do NOT add any explanatory text about what the prompt does or how it's designed. Do NOT add a title heading like "Optimized Prompt" - start directly with the prompt content.
 
 # QUALITY STANDARDS
 - Highly structured and logical
 - Optimized for reasoning efficiency
 - Clear success criteria and constraints
-- Balanced detail appropriate for o3-mini's capabilities`}},y={"gpt-4o":{api:"openai",model:"gpt-4o-mini",maxTokens:1200,temperature:.3},"claude-3-sonnet":{api:"openai",model:"gpt-3.5-turbo-1106",maxTokens:1e3,temperature:.3},"gemini-1.5":{api:"openai",model:"gpt-3.5-turbo-1106",maxTokens:1e3,temperature:.3},"o3-mini":{api:"openai",model:"o3-mini-2025-01-31",maxTokens:1e5,temperature:1}};async function x(t,e,r="simple",n){var l,s,p;const i=await L();if(!i)throw new Error("API key not configured. Please set up your API key in settings.");const a=S[r][e],o=y[e];try{const c=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${i}`},body:JSON.stringify({model:o.model,messages:[{role:"system",content:a},{role:"user",content:`Optimize this prompt for ${e}: ${t}`}],temperature:o.temperature,max_tokens:o.maxTokens,stream:o.model!=="o3-mini-2025-01-31"})});if(!c.ok)throw new Error(`API request failed: ${c.statusText}`);if(o.model==="o3-mini-2025-01-31"){const d=(await c.json()).choices[0].message.content;return n&&n(d),d}else{const h=c.body.getReader(),d=new TextDecoder;let m="";for(;;){const{done:I,value:E}=await h.read();if(I)break;const w=d.decode(E).split(`
-`);for(const f of w)if(f.startsWith("data: ")){const g=f.slice(6);if(g==="[DONE]")continue;try{const T=(p=(s=(l=JSON.parse(g).choices)==null?void 0:l[0])==null?void 0:s.delta)==null?void 0:p.content;T&&(m+=T,n&&n(m))}catch{}}}return m}}catch(c){throw console.error("API call failed:",c),c}}const u=new Map,A=24*60*60*1e3;function O(t,e,r){return`${r}:${e}:${t.toLowerCase().trim()}`}function k(t,e,r){const n=O(t,e,r),i=u.get(n);return i&&Date.now()-i.timestamp<A?i.result:(i&&u.delete(n),null)}function N(t,e,r,n){const i=O(t,e,r);if(u.set(i,{result:n,timestamp:Date.now()}),u.size>100){const a=u.keys().next().value;u.delete(a)}}async function L(){return new Promise(t=>{chrome.storage.sync.get(["apiKey"],e=>{t(e.apiKey||"")})})}function P(t){const e=t.toLowerCase();return e.includes("code")||e.includes("function")||e.includes("implement")||e.includes("debug")?"code_generation":e.includes("analyze")||e.includes("explain")||e.includes("compare")?"analytical":e.includes("write")||e.includes("story")||e.includes("create")?"creative_writing":"general"}function b(t,e,r){const n=[];return!t.includes("You are")&&e.includes("You are")&&n.push("Added role definition for clarity"),r==="claude-3-sonnet"&&e.includes("<")&&n.push("Added XML-style structure tags"),e.includes("step")&&!t.includes("step")&&n.push("Broke down into clear steps"),e.length>t.length*1.5&&n.push("Added specific constraints and context"),n}chrome.runtime.onInstalled.addListener(()=>{chrome.contextMenus.create({id:"optimizePrompt",title:"Optimize this prompt",contexts:["selection"]})});chrome.contextMenus.onClicked.addListener((t,e)=>{t.menuItemId==="optimizePrompt"&&t.selectionText&&(chrome.storage.local.set({selectedText:t.selectionText,fromContextMenu:!0}),chrome.action.openPopup())});chrome.runtime.onMessage.addListener((t,e,r)=>{if(t.action==="optimizePrompt"){const{rawPrompt:n,targetModel:i,qualityLevel:a="simple"}=t.data,o=k(n,i,a);if(o){console.log(`Cache hit - instant response! (${a} quality)`),r({success:!0,data:o,cached:!0});return}return x(n,i,a,s=>{chrome.runtime.sendMessage({action:"optimizationProgress",data:{partialResult:s}}).catch(()=>{})}).then(s=>{const p={optimizedPrompt:s,detectedIntent:P(n),qualityLevel:a,metadata:{originalLength:n.length,optimizedLength:s.length,optimizationTips:b(n,s,i),model:y[i].model}};N(n,i,a,p),r({success:!0,data:p})}).catch(s=>{r({success:!1,error:s.message})}),!0}});
+- Balanced detail appropriate for o3-mini's capabilities`}},y={"gpt-4o":{api:"openai",model:"gpt-4o-mini",maxTokens:1200,temperature:.3},"claude-3-sonnet":{api:"openai",model:"gpt-3.5-turbo-1106",maxTokens:1e3,temperature:.3},"gemini-1.5":{api:"openai",model:"gpt-3.5-turbo-1106",maxTokens:1e3,temperature:.3},"o3-mini":{api:"openai",model:"o3-mini-2025-01-31",maxTokens:1e5,temperature:1}};async function R(t,e,n="simple",i){var m,c,p;const r=await k();if(!r)throw new Error("API key not configured. Please set up your API key in settings.");const a=N[n][e],s=y[e];try{const o=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${r}`},body:JSON.stringify({model:s.model,messages:[{role:"system",content:a},{role:"user",content:`Optimize this prompt for ${e}: ${t}`}],temperature:s.temperature,max_tokens:s.maxTokens,stream:s.model!=="o3-mini-2025-01-31"})});if(!o.ok)throw new Error(`API request failed: ${o.statusText}`);if(s.model==="o3-mini-2025-01-31"){const l=(await o.json()).choices[0].message.content;return i&&i(l),l}else{const h=o.body.getReader(),l=new TextDecoder;let u="";for(;;){const{done:w,value:x}=await h.read();if(w)break;const I=l.decode(x).split(`
+`);for(const g of I)if(g.startsWith("data: ")){const f=g.slice(6);if(f==="[DONE]")continue;try{const T=(p=(c=(m=JSON.parse(f).choices)==null?void 0:m[0])==null?void 0:c.delta)==null?void 0:p.content;T&&(u+=T,i&&i(u))}catch{}}}return u}}catch(o){throw console.error("API call failed:",o),o}}function S(t){const e=[/^#+ ?(?:Optimized )?Prompt (?:for|optimized for) .+?$/gmi,/^#+ ?(?:Prompt|Optimized) .+?$/gmi,/This (?:optimized )?prompt is designed to.+?\./gi,/This prompt (?:will )?leverage.+?\./gi,/The following prompt.+?\./gi,/Here's the optimized prompt.+?:/gi,/Below is the optimized prompt.+?:/gi,/I've optimized.+?\./gi,/The optimized prompt.+?:/gi,/^This .+? prompt .+?\.\s*/gm,/^Here is .+? prompt.+?:?\s*/gmi,/^The .+? prompt.+?:?\s*/gmi];let n=t;for(const i of e)n=n.replace(i,"");return n=n.trim().replace(/\n{3,}/g,`
+
+`),n=n.replace(/^\n+/,""),n}const d=new Map,P=24*60*60*1e3;function O(t,e,n){return`${n}:${e}:${t.toLowerCase().trim()}`}function z(t,e,n){const i=O(t,e,n),r=d.get(i);return r&&Date.now()-r.timestamp<P?r.result:(r&&d.delete(i),null)}function A(t,e,n,i){const r=O(t,e,n);if(d.set(r,{result:i,timestamp:Date.now()}),d.size>100){const a=d.keys().next().value;d.delete(a)}}async function k(){return new Promise(t=>{chrome.storage.sync.get(["apiKey"],e=>{t(e.apiKey||"")})})}function b(t){const e=t.toLowerCase();return e.includes("code")||e.includes("function")||e.includes("implement")||e.includes("debug")?"code_generation":e.includes("analyze")||e.includes("explain")||e.includes("compare")?"analytical":e.includes("write")||e.includes("story")||e.includes("create")?"creative_writing":"general"}function L(t,e,n){const i=[];return!t.includes("You are")&&e.includes("You are")&&i.push("Added role definition for clarity"),n==="claude-3-sonnet"&&e.includes("<")&&i.push("Added XML-style structure tags"),e.includes("step")&&!t.includes("step")&&i.push("Broke down into clear steps"),e.length>t.length*1.5&&i.push("Added specific constraints and context"),i}chrome.runtime.onInstalled.addListener(()=>{chrome.contextMenus.create({id:"optimizePrompt",title:"Optimize this prompt",contexts:["selection"]})});chrome.contextMenus.onClicked.addListener((t,e)=>{t.menuItemId==="optimizePrompt"&&t.selectionText&&(chrome.storage.local.set({selectedText:t.selectionText,fromContextMenu:!0}),chrome.action.openPopup())});chrome.runtime.onMessage.addListener((t,e,n)=>{if(t.action==="optimizePrompt"){const{rawPrompt:i,targetModel:r,qualityLevel:a="simple"}=t.data,s=z(i,r,a);if(s){console.log(`Cache hit - instant response! (${a} quality)`),n({success:!0,data:s,cached:!0});return}return R(i,r,a,c=>{chrome.runtime.sendMessage({action:"optimizationProgress",data:{partialResult:c}}).catch(()=>{})}).then(c=>{const p=S(c),o={optimizedPrompt:p,detectedIntent:b(i),qualityLevel:a,metadata:{originalLength:i.length,optimizedLength:p.length,optimizationTips:L(i,p,r),model:y[r].model}};A(i,r,a,o),n({success:!0,data:o})}).catch(c=>{n({success:!1,error:c.message})}),!0}});

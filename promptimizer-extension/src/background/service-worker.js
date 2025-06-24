@@ -50,7 +50,7 @@ Transform the user's raw prompt into a production-ready, highly optimized versio
 7. **Error Handling**: Include instructions for edge cases and uncertainty
 
 # OUTPUT FORMAT
-Return ONLY the optimized prompt formatted with clear sections, using markdown headings where appropriate. Do NOT include any explanations or descriptions about what the prompt is designed to do.
+Return ONLY the optimized prompt formatted with clear sections, using markdown headings where appropriate. Do NOT include any explanations or descriptions about what the prompt is designed to do. Do NOT add a title or heading like "# Optimized Prompt for GPT-4o" - start directly with the actual prompt content.
 
 # QUALITY STANDARDS
 The optimized prompt should be:
@@ -75,7 +75,7 @@ Transform the user's raw prompt into a comprehensive, well-structured prompt tha
 7. **Verification**: Add self-checking mechanisms
 
 # OUTPUT FORMAT
-Return ONLY the optimized prompt using proper XML structure and professional formatting. Do NOT include any meta-commentary or descriptions about the prompt.
+Return ONLY the optimized prompt using proper XML structure and professional formatting. Do NOT include any meta-commentary or descriptions about the prompt. Do NOT add a title or heading - start directly with the prompt content.
 
 # QUALITY STANDARDS
 - Comprehensive context and clear structure
@@ -99,7 +99,7 @@ Transform the user's raw prompt into a comprehensive, structured prompt that lev
 7. **Iterative Refinement**: Include self-improvement instructions
 
 # OUTPUT FORMAT
-Return ONLY the optimized prompt with professional structure and clear sections. Do NOT include any explanations about the prompt's purpose or design.
+Return ONLY the optimized prompt with professional structure and clear sections. Do NOT include any explanations about the prompt's purpose or design. Do NOT add a title heading - start directly with the prompt content.
 
 # QUALITY STANDARDS
 - Comprehensive and well-organized
@@ -123,7 +123,7 @@ Transform the user's raw prompt into a highly optimized, production-ready prompt
 7. **Quality Assurance**: Include verification and error-checking steps
 
 # OUTPUT FORMAT
-Return ONLY the optimized prompt using professional structure with clear sections and headings. Do NOT add any explanatory text about what the prompt does or how it's designed.
+Return ONLY the optimized prompt using professional structure with clear sections and headings. Do NOT add any explanatory text about what the prompt does or how it's designed. Do NOT add a title heading like "Optimized Prompt" - start directly with the prompt content.
 
 # QUALITY STANDARDS
 - Highly structured and logical
@@ -219,6 +219,38 @@ async function callOptimizationAPI(rawPrompt, targetModel, qualityLevel = 'simpl
     console.error('API call failed:', error)
     throw error
   }
+}
+
+// Post-process to remove common explanatory phrases
+function cleanOptimizedPrompt(prompt) {
+  // Remove common explanatory sentences that models might add
+  const explanatoryPatterns = [
+    /^#+ ?(?:Optimized )?Prompt (?:for|optimized for) .+?$/gmi,  // Remove "# Optimized Prompt for GPT-4o" etc
+    /^#+ ?(?:Prompt|Optimized) .+?$/gmi,  // Remove any prompt-related headings
+    /This (?:optimized )?prompt is designed to.+?\./gi,
+    /This prompt (?:will )?leverage.+?\./gi,
+    /The following prompt.+?\./gi,
+    /Here's the optimized prompt.+?:/gi,
+    /Below is the optimized prompt.+?:/gi,
+    /I've optimized.+?\./gi,
+    /The optimized prompt.+?:/gi,
+    /^This .+? prompt .+?\.\s*/gm,
+    /^Here is .+? prompt.+?:?\s*/gmi,
+    /^The .+? prompt.+?:?\s*/gmi
+  ]
+  
+  let cleaned = prompt
+  for (const pattern of explanatoryPatterns) {
+    cleaned = cleaned.replace(pattern, '')
+  }
+  
+  // Remove leading/trailing whitespace and extra newlines
+  cleaned = cleaned.trim().replace(/\n{3,}/g, '\n\n')
+  
+  // If the prompt starts with extra newlines after cleaning, remove them
+  cleaned = cleaned.replace(/^\n+/, '')
+  
+  return cleaned
 }
 
 // Simple in-memory cache with TTL
@@ -347,14 +379,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     callOptimizationAPI(rawPrompt, targetModel, qualityLevel, onProgress)
       .then(optimizedPrompt => {
+        // Clean any explanatory text that might have been added
+        const cleanedPrompt = cleanOptimizedPrompt(optimizedPrompt)
+        
         const result = {
-          optimizedPrompt,
+          optimizedPrompt: cleanedPrompt,
           detectedIntent: detectIntent(rawPrompt),
           qualityLevel,
           metadata: {
             originalLength: rawPrompt.length,
-            optimizedLength: optimizedPrompt.length,
-            optimizationTips: getOptimizationTips(rawPrompt, optimizedPrompt, targetModel),
+            optimizedLength: cleanedPrompt.length,
+            optimizationTips: getOptimizationTips(rawPrompt, cleanedPrompt, targetModel),
             model: MODEL_CONFIGS[targetModel].model
           }
         }

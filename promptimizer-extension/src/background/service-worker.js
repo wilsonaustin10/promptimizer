@@ -138,7 +138,7 @@ const MODEL_CONFIGS = {
   'gpt-4o': { api: 'openai', model: 'gpt-4o-mini', maxTokens: 1200, temperature: 0.3 },
   'claude-3-sonnet': { api: 'openai', model: 'gpt-3.5-turbo-1106', maxTokens: 1000, temperature: 0.3 },
   'gemini-1.5': { api: 'openai', model: 'gpt-3.5-turbo-1106', maxTokens: 1000, temperature: 0.3 },
-  'o3-mini': { api: 'openai', model: 'o3-mini-2025-01-31', maxTokens: 100000, temperature: 1.0 } // Using actual o3-mini model
+  'o3-mini': { api: 'openai', model: 'o3-mini', maxTokens: 100000, reasoningEffort: 'medium' } // o3-mini with reasoning effort
 }
 
 async function callOptimizationAPI(rawPrompt, targetModel, qualityLevel = 'simple', onProgress) {
@@ -151,30 +151,53 @@ async function callOptimizationAPI(rawPrompt, targetModel, qualityLevel = 'simpl
   const config = MODEL_CONFIGS[targetModel]
   
   try {
+    // Build request body based on model type
+    const requestBody = {
+      model: config.model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Optimize this prompt for ${targetModel}: ${rawPrompt}` }
+      ]
+    }
+
+    // Add model-specific parameters
+    if (config.model === 'o3-mini') {
+      // o3-mini uses reasoning_effort instead of temperature
+      requestBody.reasoning_effort = config.reasoningEffort
+      // o3-mini uses max_completion_tokens instead of max_tokens
+      requestBody.max_completion_tokens = config.maxTokens
+      // o3-mini doesn't support streaming
+      requestBody.stream = false
+    } else {
+      // Other models use temperature and support streaming
+      requestBody.temperature = config.temperature
+      requestBody.max_tokens = config.maxTokens
+      requestBody.stream = true
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify({
-        model: config.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Optimize this prompt for ${targetModel}: ${rawPrompt}` }
-        ],
-        temperature: config.temperature,
-        max_tokens: config.maxTokens,
-        stream: config.model !== 'o3-mini-2025-01-31' // o3-mini doesn't support streaming
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`)
+      const errorBody = await response.text()
+      console.error('API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+        model: config.model,
+        requestBody: requestBody
+      })
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorBody}`)
     }
 
     // Handle streaming vs non-streaming response
-    if (config.model === 'o3-mini-2025-01-31') {
+    if (config.model === 'o3-mini') {
       // Non-streaming response for o3-mini
       const data = await response.json()
       const result = data.choices[0].message.content

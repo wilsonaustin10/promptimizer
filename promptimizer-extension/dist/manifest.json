@@ -27,7 +27,16 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://bard.google.com/*",
+        "https://gemini.google.com/*",
+        "https://www.notion.so/*",
+        "https://docs.google.com/*",
+        "https://github.com/*",
+        "https://colab.research.google.com/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
@@ -37,5 +46,8 @@
     "48": "icon-48.png",
     "128": "icon-128.png"
   },
-  "options_page": "src/options/options.html"
+  "options_page": "src/options/options.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; worker-src 'self'; connect-src https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; default-src 'self'"
+  }
 }

@@ -535,24 +535,30 @@ async function callOptimizationAPI(rawPrompt, targetModel, qualityLevel = 'simpl
     })
 
     if (!response.ok) {
-      const errorBody = await response.text()
-      console.error('API Error Details:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorBody,
-        model: config.model,
-        requestBody: requestBody
-      })
-      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorBody}`)
+      let errorBody
+      try {
+        errorBody = await response.json()
+      } catch {
+        errorBody = await response.text()
+      }
+      
+      const errorInfo = validateErrorResponse(errorBody, response.status)
+      console.error('API Error:', errorInfo)
+      throw new Error(`API request failed: ${errorInfo.status} - ${errorInfo.message}`)
     }
 
     // Handle streaming vs non-streaming response
     if (config.model === 'o3-mini') {
       // Non-streaming response for o3-mini
       const data = await response.json()
-      const result = data.choices[0].message.content
-      if (onProgress) onProgress(result)
-      return result
+      const validation = validateOpenAIResponse(data)
+      
+      if (!validation.valid) {
+        throw new Error(`Invalid API response: ${validation.error}`)
+      }
+      
+      if (onProgress) onProgress(validation.content)
+      return validation.content
     } else {
       // Streaming response for other models
       const reader = response.body.getReader()
@@ -572,15 +578,16 @@ async function callOptimizationAPI(rawPrompt, targetModel, qualityLevel = 'simpl
             if (data === '[DONE]') continue
             
             try {
-              const parsed = JSON.parse(data)
-              const content = parsed.choices?.[0]?.delta?.content
-              if (content) {
-                result += content
+              const chunkValidation = validateStreamChunk(data)
+              if (chunkValidation.valid && chunkValidation.content) {
+                result += chunkValidation.content
                 // Send progress updates
                 if (onProgress) onProgress(result)
+              } else if (!chunkValidation.valid) {
+                console.warn('Invalid stream chunk:', chunkValidation.error)
               }
             } catch (e) {
-              // Skip invalid JSON chunks
+              console.warn('Failed to process stream chunk:', e.message)
             }
           }
         }
@@ -664,12 +671,17 @@ function setCachedResult(rawPrompt, targetModel, qualityLevel, result) {
   }
 }
 
+// Import secure crypto functions and validation
+import { getSecureApiKey } from '../utils/crypto.js'
+import { validateOpenAIResponse, validateStreamChunk, validateErrorResponse, validateOptimizationResult } from '../utils/validator.js'
+
 async function getAPIKey() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['apiKey'], (result) => {
-      resolve(result.apiKey || '')
-    })
-  })
+  try {
+    return await getSecureApiKey()
+  } catch (error) {
+    console.error('Failed to retrieve API key:', error)
+    return ''
+  }
 }
 
 function detectIntent(prompt) {
@@ -755,7 +767,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Clean any explanatory text that might have been added
         const cleanedPrompt = cleanOptimizedPrompt(optimizedPrompt)
         
-        const result = {
+        const rawResult = {
           optimizedPrompt: cleanedPrompt,
           detectedIntent: detectIntent(rawPrompt),
           qualityLevel,
@@ -767,6 +779,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             maxTokensUsed: MODEL_CONFIGS[targetModel].maxTokens[qualityLevel]
           }
         }
+
+        // Validate the complete result
+        const resultValidation = validateOptimizationResult(rawResult)
+        if (!resultValidation.valid) {
+          throw new Error(`Invalid optimization result: ${resultValidation.error}`)
+        }
+
+        const result = resultValidation.result
         
         // Cache the result
         setCachedResult(rawPrompt, targetModel, qualityLevel, result)

@@ -111,6 +111,22 @@ async function clearSecureStorage() {
   });
 }
 
+// Import analytics functionality
+import('../utils/analytics.js').then(module => {
+  window.analytics = module.analytics;
+  window.ANALYTICS_EVENTS = module.ANALYTICS_EVENTS;
+}).catch(() => {
+  // Fallback if module loading fails
+  console.warn('Analytics module not available');
+});
+
+// Import privacy controls
+import('../utils/privacy-controls.js').then(module => {
+  window.privacyManager = module.privacyManager;
+}).catch(() => {
+  console.warn('Privacy controls not available');
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   const apiKeyInput = document.getElementById('apiKey')
   const defaultModelSelect = document.getElementById('defaultModel')
@@ -118,6 +134,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const showTipsCheckbox = document.getElementById('showTips')
   const saveButton = document.getElementById('saveButton')
   const status = document.getElementById('status')
+  
+  // Analytics controls
+  const analyticsEnabledCheckbox = document.getElementById('analyticsEnabled')
+  const userEmailInput = document.getElementById('userEmail')
+  const analyticsStatusText = document.getElementById('analyticsStatusText')
+  const learnMoreLink = document.getElementById('learnMoreAnalytics')
+  
+  // Privacy controls
+  const exportDataButton = document.getElementById('exportDataButton')
+  const clearDataButton = document.getElementById('clearDataButton')
+  const privacyInfoButton = document.getElementById('privacyInfoButton')
 
   // Load saved settings with migration support
   try {
@@ -147,18 +174,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       apiKeyInput.value = apiKey
     }
 
-    // Load other settings
+    // Load other settings including analytics preferences
     chrome.storage.sync.get([
       'defaultModel',
       'autoDetectIntent',
-      'showTips'
+      'showTips',
+      'userEmail'
     ], (data) => {
       if (data.defaultModel) {
         defaultModelSelect.value = data.defaultModel
       }
       autoDetectCheckbox.checked = data.autoDetectIntent !== false
       showTipsCheckbox.checked = data.showTips !== false
+      
+      // Load saved email if available
+      if (data.userEmail) {
+        userEmailInput.value = data.userEmail
+      }
     })
+    
+    // Load analytics status
+    await loadAnalyticsStatus()
   } catch (error) {
     console.error('Failed to load settings:', error)
     showStatus('⚠️ Failed to load secure settings', 'error')
@@ -191,11 +227,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('API key cleared successfully')
       }
 
+      // Handle analytics settings
+      const analyticsEnabled = analyticsEnabledCheckbox.checked
+      const userEmail = userEmailInput.value.trim()
+      
+      // Update analytics preferences
+      if (window.analytics) {
+        await window.analytics.setEnabled(analyticsEnabled)
+        
+        // Handle email if provided and analytics is enabled
+        if (analyticsEnabled && userEmail && isValidEmail(userEmail)) {
+          const emailSaved = await window.analytics.recordEmail(userEmail)
+          if (emailSaved) {
+            showEmailStatus('✓ Email saved securely', 'success')
+          } else {
+            showEmailStatus('⚠️ Failed to save email', 'error')
+          }
+        }
+      }
+      
       // Store other settings
       const settings = {
         defaultModel: defaultModelSelect.value,
         autoDetectIntent: autoDetectCheckbox.checked,
-        showTips: showTipsCheckbox.checked
+        showTips: showTipsCheckbox.checked,
+        userEmail: userEmail
       }
 
       console.log('Saving other settings:', settings)
@@ -240,10 +296,189 @@ document.addEventListener('DOMContentLoaded', async () => {
     return false
   }
 
-  // Add enter key support for API key input
+  // Analytics-related event handlers
+  analyticsEnabledCheckbox.addEventListener('change', async () => {
+    if (window.analytics) {
+      await window.analytics.setEnabled(analyticsEnabledCheckbox.checked)
+      await updateAnalyticsStatus()
+    }
+  })
+  
+  learnMoreLink.addEventListener('click', (e) => {
+    e.preventDefault()
+    showAnalyticsInfo()
+  })
+  
+  userEmailInput.addEventListener('blur', () => {
+    const email = userEmailInput.value.trim()
+    if (email && !isValidEmail(email)) {
+      showEmailStatus('Invalid email format', 'error')
+    } else {
+      showEmailStatus('', '')
+    }
+  })
+  
+  // Add enter key support for inputs
   apiKeyInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       saveButton.click()
+    }
+  })
+  
+  userEmailInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      saveButton.click()
+    }
+  })
+  
+  // Load analytics status on page load
+  async function loadAnalyticsStatus() {
+    try {
+      if (window.analytics) {
+        const status = await window.analytics.getStatus()
+        analyticsEnabledCheckbox.checked = status.enabled
+        await updateAnalyticsStatus()
+      } else {
+        analyticsStatusText.textContent = 'Analytics module not available'
+      }
+    } catch (error) {
+      console.error('Failed to load analytics status:', error)
+      analyticsStatusText.textContent = 'Error loading analytics status'
+    }
+  }
+  
+  async function updateAnalyticsStatus() {
+    try {
+      if (!window.analytics) {
+        analyticsStatusText.textContent = 'Analytics module not available'
+        return
+      }
+      
+      const status = await window.analytics.getStatus()
+      
+      if (status.enabled) {
+        const installDate = status.install_date ? 
+          new Date(status.install_date).toLocaleDateString() : 'Unknown'
+        analyticsStatusText.innerHTML = `
+          ✓ Enabled | User ID: ${status.user_id ? status.user_id.substring(0, 8) + '...' : 'Generating...'} | 
+          Installed: ${installDate}
+          ${status.email_provided ? ' | 📧 Email provided' : ''}
+        `
+      } else {
+        analyticsStatusText.textContent = '❌ Disabled - No data is collected'
+      }
+    } catch (error) {
+      console.error('Failed to update analytics status:', error)
+      analyticsStatusText.textContent = 'Error checking analytics status'
+    }
+  }
+  
+  function showAnalyticsInfo() {
+    const info = `
+Privacy-Conscious Analytics:
+
+• Anonymous user IDs (no personal identification)
+• Basic usage patterns only (which features are used)
+• No prompt content is ever collected
+• Data encrypted in transit and at rest
+• Full opt-out available anytime
+• Email is optional and used only for updates
+
+We collect minimal data to improve the extension while respecting your privacy.
+    `
+    alert(info)
+  }
+  
+  function showEmailStatus(message, type) {
+    const emailValidation = document.getElementById('emailValidation')
+    emailValidation.textContent = message
+    emailValidation.className = `validation-message ${type}`
+  }
+  
+  function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+  
+  // Privacy control event handlers
+  exportDataButton.addEventListener('click', async () => {
+    try {
+      if (window.privacyManager) {
+        const success = await window.privacyManager.downloadUserData()
+        if (success) {
+          showStatus('✓ Data exported successfully', 'success')
+        } else {
+          showStatus('⚠️ Failed to export data', 'error')
+        }
+      } else {
+        showStatus('⚠️ Privacy controls not available', 'error')
+      }
+    } catch (error) {
+      console.error('Export data error:', error)
+      showStatus('⚠️ Export failed: ' + error.message, 'error')
+    }
+  })
+  
+  clearDataButton.addEventListener('click', async () => {
+    const confirmed = confirm(
+      'Are you sure you want to clear ALL extension data?\\n\\n' +
+      'This will remove:\\n' +
+      '• All analytics data\\n' +
+      '• Extension settings and preferences\\n' +
+      '• Cached optimization results\\n' +
+      '• Email subscription (if provided)\\n\\n' +
+      'You will be asked separately about your API key.\\n\\n' +
+      'This action cannot be undone.'
+    )
+    
+    if (confirmed) {
+      try {
+        if (window.privacyManager) {
+          const success = await window.privacyManager.clearAllData()
+          if (success) {
+            showStatus('✓ All data cleared successfully', 'success')
+            // Refresh the page to show cleared state
+            setTimeout(() => {
+              window.location.reload()
+            }, 2000)
+          } else {
+            showStatus('⚠️ Failed to clear all data', 'error')
+          }
+        } else {
+          showStatus('⚠️ Privacy controls not available', 'error')
+        }
+      } catch (error) {
+        console.error('Clear data error:', error)
+        showStatus('⚠️ Clear failed: ' + error.message, 'error')
+      }
+    }
+  })
+  
+  privacyInfoButton.addEventListener('click', () => {
+    if (window.privacyManager) {
+      const info = window.privacyManager.getPrivacyInfo()
+      
+      const infoText = `
+📊 PRIVACY INFORMATION
+
+🔍 Data We Collect:
+${info.data_collection.map(item => '• ' + item).join('\\n')}
+
+🚫 Data We DON'T Collect:
+${info.data_not_collected.map(item => '• ' + item).join('\\n')}
+
+⏰ Data Retention:
+${info.data_retention.map(item => '• ' + item).join('\\n')}
+
+🛡️ Your Rights:
+${info.your_rights.map(item => '• ' + item).join('\\n')}
+
+📞 Contact: ${info.contact}
+      `.trim()
+      
+      alert(infoText)
+    } else {
+      alert('Privacy information not available')
     }
   })
 })

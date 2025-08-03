@@ -165,3 +165,110 @@ h1 {
 .form-group .validation-message.show {
   display: block;
 }
+
+/* Analytics and privacy styling */
+.form-group input[type="email"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input[type="email"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.privacy-info {
+  color: #718096;
+  font-size: 12px;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.privacy-info a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.privacy-info a:hover {
+  text-decoration: underline;
+}
+
+.email-opt-in {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+  margin-top: 16px;
+}
+
+.analytics-status {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.analytics-status small {
+  color: #4a5568;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.validation-message.success {
+  color: #48bb78;
+  display: block;
+}
+
+.validation-message.error {
+  color: #f56565;
+  display: block;
+}
+
+/* Privacy controls styling */
+.privacy-controls {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.privacy-controls h3 {
+  font-size: 16px;
+  color: #2d3748;
+  margin-bottom: 12px;
+}
+
+.privacy-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.privacy-button {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: white;
+  color: #4a5568;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.privacy-button:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.privacy-button.danger {
+  border-color: #feb2b2;
+  color: #c53030;
+}
+
+.privacy-button.danger:hover {
+  background: #fed7d7;
+  border-color: #fc8181;
+}

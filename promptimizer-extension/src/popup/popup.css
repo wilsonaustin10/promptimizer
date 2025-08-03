@@ -46,15 +46,19 @@ body {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .model-selector,
-.quality-selector {
+.quality-selector,
+.optimization-type-selector {
   flex: 1;
+  min-width: 150px;
 }
 
 .model-selector label,
-.quality-selector label {
+.quality-selector label,
+.optimization-type-selector label {
   display: block;
   font-weight: 500;
   margin-bottom: 6px;
@@ -63,7 +67,8 @@ body {
 }
 
 .model-selector select,
-.quality-selector select {
+.quality-selector select,
+.optimization-type-selector select {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid #ddd;

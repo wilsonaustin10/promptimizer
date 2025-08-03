@@ -1,0 +1,12 @@
+{
+  "name": "promptimizer-analytics-api",
+  "version": "1.0.0",
+  "description": "Analytics API for Promptimizer Chrome Extension",
+  "main": "analytics.js",
+  "dependencies": {
+    "pg": "^8.11.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

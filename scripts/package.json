@@ -1,0 +1,8 @@
+{
+  "name": "promptimizer-scripts",
+  "version": "1.0.0",
+  "description": "Setup scripts for Promptimizer Analytics",
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
+}

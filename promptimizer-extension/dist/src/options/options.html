@@ -49,6 +49,44 @@
       </div>
     </section>
 
+    <section class="settings-section">
+      <h2>🔍 Usage Analytics & Updates</h2>
+      <p class="description">Help us improve Promptimizer with minimal, privacy-conscious analytics.</p>
+      
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="analyticsEnabled" checked />
+          Enable anonymous usage analytics
+        </label>
+        <small class="privacy-info">
+          Collects basic usage patterns with anonymous IDs. No personal data or prompts are stored.
+          <a href="#" id="learnMoreAnalytics">Learn more</a>
+        </small>
+      </div>
+
+      <div class="form-group email-opt-in" id="emailOptInSection">
+        <label for="userEmail">📧 Get product updates (optional)</label>
+        <input type="email" id="userEmail" placeholder="your@email.com" />
+        <small class="privacy-info">
+          Optional. Used only for extension updates and feature announcements. Never shared.
+        </small>
+        <div class="validation-message" id="emailValidation"></div>
+      </div>
+
+      <div class="analytics-status" id="analyticsStatus">
+        <small id="analyticsStatusText">Loading analytics status...</small>
+      </div>
+      
+      <div class="privacy-controls">
+        <h3>🛡️ Privacy Controls</h3>
+        <div class="privacy-actions">
+          <button id="exportDataButton" class="privacy-button">📥 Export My Data</button>
+          <button id="clearDataButton" class="privacy-button danger">🗑️ Clear All Data</button>
+          <button id="privacyInfoButton" class="privacy-button">ℹ️ Privacy Info</button>
+        </div>
+      </div>
+    </section>
+
     <div class="actions">
       <button id="saveButton" class="save-button">Save Settings</button>
       <span id="status" class="status"></span>
